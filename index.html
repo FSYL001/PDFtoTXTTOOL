@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FSYLのPDF转TXT工具</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #7209b7;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --success: #06d6a0;
+      --border-radius: 16px;
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s ease;
+      
+      /* 浅色模式变量 */
+      --bg-color: #f8f9fa;
+      --text-color: #212529;
+      --container-bg: rgba(255, 255, 255, 0.85);
+      --card-bg: rgba(248, 249, 250, 0.8);
+      --textarea-bg: #fafafa;
+      --border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #1a1c23;
+      --text-color: #e9ecef;
+      --container-bg: rgba(33, 37, 41, 0.85);
+      --card-bg: rgba(52, 58, 64, 0.8);
+      --textarea-bg: #2b3035;
+      --border-color: rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-color) 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-color);
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    .container {
+      background: var(--container-bg);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--card-shadow);
+      width: 850px;
+      max-width: 95%;
+      border: 1px solid var(--border-color);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      margin: 12px auto;
+      border-radius: 2px;
+    }
+
+    h2 {
+      color: var(--text-color);
+      font-weight: 700;
+      font-size: 28px;
+      margin-bottom: 8px;
+      transition: color 0.3s ease;
+    }
+
+    .subtitle {
+      color: #6c757d;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    .file-upload {
+      background: rgba(67, 97, 238, 0.05);
+      border: 2px dashed rgba(67, 97, 238, 0.3);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      text-align: center;
+      margin-bottom: 25px;
+      transition: var(--transition);
+    }
+
+    .file-upload:hover {
+      background: rgba(67, 97, 238, 0.1);
+      border-color: rgba(67, 97, 238, 0.5);
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 5px;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn i {
+      margin-right: 8px;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      box-shadow: 0 4px 10px rgba(114, 9, 183, 0.25);
+    }
+
+    .btn-secondary:hover {
+      background: #65119c;
+      box-shadow: 0 6px 15px rgba(114, 9, 183, 0.3);
+    }
+
+    .btn-success {
+      background: var(--success);
+      box-shadow: 0 4px 10px rgba(6, 214, 160, 0.25);
+    }
+
+    .btn-success:hover {
+      background: #05c290;
+      box-shadow: 0 6px 15px rgba(6, 214, 160, 0.3);
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--dark);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-nav:hover {
+      background: white;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .options {
+      margin: 25px 0;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transition: background 0.3s ease;
+    }
+
+    .options-title {
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      transition: color 0.3s ease;
+    }
+
+    .options-title i {
+      margin-right: 10px;
+      color: var(--primary);
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .radio-item {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .radio-item input[type="radio"] {
+      display: none;
+    }
+
+    .radio-item label {
+      display: block;
+      padding: 15px;
+      background: var(--container-bg);
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .radio-item label:hover {
+      border-color: var(--primary);
+    }
+
+    .radio-item input[type="radio"]:checked + label {
+      border-color: var(--primary);
+      background: rgba(67, 97, 238, 0.1);
+      color: var(--primary);
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    .checkbox-wrapper label {
+      color: var(--text-color);
+    }
+
+    .result-area {
+      margin-top: 25px;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 240px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      padding: 18px;
+      border-radius: var(--border-radius);
+      border: 2px solid #e9ecef;
+      resize: vertical;
+      font-family: 'Consolas', 'Monaco', monospace;
+      background: var(--textarea-bg);
+      white-space: pre-wrap;
+      transition: var(--transition);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-color);
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      transform: translateX(150%);
+      transition: transform 0.4s ease;
+      display: flex;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .status-message.show {
+      transform: translateX(0);
+    }
+
+    .status-message i {
+      margin-right: 10px;
+      font-size: 20px;
+    }
+
+    .status-message.success {
+      border-left: 4px solid var(--success);
+      color: #0a8754;
+    }
+
+    .status-message.error {
+      border-left: 4px solid #ef476f;
+      color: #c1121f;
+    }
+
+    .nav-buttons {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .theme-switch {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+    }
+
+    .theme-switch-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--container-bg);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: var(--transition);
+    }
+
+    .theme-switch-btn:hover {
+      transform: rotate(30deg);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 15px;
+      color: #6c757d;
+      font-size: 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .avatar-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary);
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: var(--transition);
+    }
+
+    .avatar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--container-bg);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .button-container button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .button-container button:hover {
+      background: var(--primary-dark);
+    }
+
+    .button-container.show {
+      display: flex;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      .radio-group {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .radio-item {
+        min-width: 100%;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .nav-buttons {
+        position: static;
+        margin-top: 25px;
+        flex-direction: row;
+        justify-content: center;
+      }
+      
+      .theme-switch {
+        top: 10px;
+        left: 10px;
+      }
+      
+      .theme-switch-btn {
+        width: 40px;
+        height: 40px;
+      }
+      
+      .avatar-container {
+        bottom: 10px;
+        right: 10px;
+      }
+      
+      .avatar {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+  <!-- 引入 pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+<body>
+  <!-- 主题切换按钮 -->
+  <div class="theme-switch">
+    <div class="theme-switch-btn" id="themeSwitch">
+      <i class="fas fa-moon"></i>
+    </div>
+  </div>
+
+  <!-- 导航按钮 -->
+  <div class="nav-buttons">
+    <button class="btn btn-nav" onclick="window.open('https://toolbox.fsyl001.sbs', '_blank')">
+      <i class="fas fa-toolbox"></i> 返回工具箱首页
+    </button>
+    <button class="btn btn-nav" onclick="window.open('https://blog.fsyl001.sbs', '_blank')">
+      <i class="fas fa-home"></i> 返回FSYL的小破站
+    </button>
+  </div>
+
+  <!-- 头像和社交按钮 -->
+  <div class="avatar-container">
+    <img class="avatar" src="https://www.helloimg.com/i/2025/02/11/67aac53e2a2f6.jpg" alt="头像" onclick="toggleButtons()">
+    <div class="button-container" id="buttonContainer">
+      <button onclick="openBilibili()">跳转B站个人主页</button>
+      <button onclick="openDouyin()">跳转抖音个人主页</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h2><i class="fas fa-file-pdf"></i> PDF TO TXT 空格处理工具</h2>
+      <p class="subtitle">高效处理PDF文本空格，支持多种处理模式</p>
+    </div>
+
+    <!-- 文件导入 -->
+    <div class="file-upload">
+      <i class="fas fa-cloud-upload-alt" style="font-size: 42px; color: #4361ee; margin-bottom: 15px;"></i>
+      <p>选择或拖放PDF文件到此处</p>
+      <div class="file-input-wrapper">
+        <button class="btn"><i class="fas fa-file-import"></i> 选择PDF文件</button>
+        <input type="file" id="fileInput" accept=".pdf">
+      </div>
+    </div>
+
+    <div class="options">
+      <div class="options-title"><i class="fas fa-cog"></i> 处理选项</div>
+      <div class="radio-group">
+        <div class="radio-item">
+          <input type="radio" id="mode1" name="mode" value="removeAll" checked>
+          <label for="mode1">完全去除空格</label>
+        </div>
+        <div class="radio-item">
+          <input type="radio" id="mode2" name="mode" value="removeBetweenChars">
+          <label for="mode2">去掉文字间空格（保留符号空格）</label>
+        </div>
+        <div class="radio-item">
+          <input type="radio" id="mode3" name="mode" value="normalize">
+          <label for="mode3">智能精简空格</label>
+        </div>
+      </div>
+      <div class="checkbox-wrapper">
+        <input type="checkbox" id="keepNewline" checked>
+        <label for="keepNewline">保留换行符</label>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <button class="btn" onclick="convertText()"><i class="fas fa-sync-alt"></i> 转换文本</button>
+    </div>
+
+    <div class="result-area">
+      <div class="result-header">
+        <h3><i class="fas fa-file-alt"></i> 处理结果</h3>
+        <div id="charCount">0 字符</div>
+      </div>
+      <textarea id="output" readonly placeholder="转换结果将显示在这里..."></textarea>
+      <div class="action-buttons">
+        <button class="btn btn-success" onclick="copyResult()"><i class="fas fa-copy"></i> 复制结果</button>
+        <button class="btn btn-secondary" onclick="downloadResult()"><i class="fas fa-download"></i> 下载TXT文件</button>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <p>版权归属 &copy; 2025 FSYLの小破站 | FSYL的小破站 </p>
+    </div>
+  </div>
+
+  <div id="statusMessage" class="status-message">
+    <i class="fas fa-check-circle"></i>
+    <span id="statusText">操作成功</span>
+  </div>
+
+  <script>
+    let rawText = ""; // 原始PDF文本
+
+    // 显示状态消息
+    function showStatusMessage(message, isSuccess = true) {
+      const statusElement = document.getElementById('statusMessage');
+      const statusText = document.getElementById('statusText');
+      const icon = statusElement.querySelector('i');
+      
+      statusText.textContent = message;
+      
+      // 更新样式和图标
+      statusElement.className = 'status-message ' + (isSuccess ? 'success' : 'error');
+      icon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+      
+      // 显示消息
+      statusElement.classList.add('show');
+      
+      // 3秒后隐藏
+      setTimeout(() => {
+        statusElement.classList.remove('show');
+      }, 3000);
+    }
+
+    // 读取 PDF 文件
+    async function loadPDF() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return showStatusMessage("请选择 PDF 文件", false);
+
+      showStatusMessage("正在处理PDF文件，请稍候...", true);
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const typedArray = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+          let textContent = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            let lastY = null;
+            content.items.forEach(item => {
+              const thisY = item.transform[5]; // y坐标
+              if (lastY !== null && Math.abs(thisY - lastY) > 5) {
+                textContent += "\n"; // 换行
+              }
+              textContent += item.str + " ";
+              lastY = thisY;
+            });
+            textContent += "\n"; // 页尾换行
+          }
+          rawText = textContent;
+          showStatusMessage("✅ PDF 导入完成，可以选择模式并点击【转换】");
+        } catch (error) {
+          console.error("PDF处理错误:", error);
+          showStatusMessage("处理PDF时发生错误", false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // 转换文本
+    function convertText() {
+      if (!rawText) return showStatusMessage("请先导入 PDF 文件", false);
+      let text = rawText;
+      const mode = document.querySelector("input[name='mode']:checked").value;
+      const keepNewline = document.getElementById("keepNewline").checked;
+
+      if (mode === "removeAll") {
+        text = text.replace(/ /g, "");
+      } else if (mode === "removeBetweenChars") {
+        text = text.replace(/([A-Za-z0-9\u4e00-\u9fa5]) +([A-Za-z0-9\u4e00-\u9fa5])/g, "$1$2");
+      } else if (mode === "normalize") {
+        text = text.replace(/ +/g, " ");
+      }
+
+      if (!keepNewline) {
+        text = text.replace(/\r?\n+/g, " ");
+      }
+
+      document.getElementById("output").value = text;
+      document.getElementById("charCount").textContent = text.length + " 字符";
+      showStatusMessage("文本转换完成");
+    }
+
+    // 复制结果
+    function copyResult() {
+      const output = document.getElementById("output");
+      if (!output.value) return showStatusMessage("没有内容可复制", false);
+      
+      output.select();
+      document.execCommand("copy");
+      showStatusMessage("📋 已复制到剪贴板！");
+    }
+
+    // 下载 TXT 文件
+    function downloadResult() {
+      const text = document.getElementById("output").value;
+      if (!text) return showStatusMessage("没有内容可下载", false);
+      
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "processed_text.txt";
+      link.click();
+      showStatusMessage("文件下载已开始");
+    }
+
+    // 切换社交按钮显示
+    function toggleButtons() {
+      const buttonContainer = document.getElementById('buttonContainer');
+      buttonContainer.classList.toggle('show');
+    }
+
+    // 跳转B站
+    function openBilibili() {
+      window.open('https://space.bilibili.com/450000657', '_blank');
+    }
+
+    // 跳转抖音
+    function openDouyin() {
+      window.open('https://www.douyin.com/user/MS4wLjABAAAAzWfG071S0Ol0_wF3xT1i0oL5eSpPdiYZZY_gKib9S_M', '_blank');
+    }
+
+    // 主题切换功能
+    function setupTheme() {
+      const themeSwitchBtn = document.getElementById('themeSwitch');
+      const icon = themeSwitchBtn.querySelector('i');
+      
+      // 检查系统偏好
+      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      // 设置初始主题
+      if (prefersDarkScheme.matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        icon.className = 'fas fa-sun';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        icon.className = 'fas fa-moon';
+      }
+      
+      // 切换主题
+      themeSwitchBtn.addEventListener('click', function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          icon.className = 'fas fa-moon';
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          icon.className = 'fas fa-sun';
+        }
+      });
+    }
+
+    // 添加事件监听器
+    document.addEventListener('DOMContentLoaded', function() {
+      // 文件输入变化时自动加载PDF
+      document.getElementById('fileInput').addEventListener('change', loadPDF);
+      
+      // 拖放文件功能
+      const fileUpload = document.querySelector('.file-upload');
+      fileUpload.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.background = 'rgba(67, 97, 238, 0.15)';
+        this.style.borderColor = 'var(--primary)';
+      });
+      
+      fileUpload.addEventListener('dragleave', function() {
+        this.style.background = 'rgba(67, 97, 238, 0.05)';
+        this.style.borderColor = 'rgba(67, 97, 238, 0.3)';
+      });
+      
+      fileUpload.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.background = 'rgba(67, 97, 238, 0.05)';
+        this.style.borderColor = 'rgba(67, 97, 238, 0.3)';
+        
+        if (e.dataTransfer.files.length) {
+          document.getElementById('fileInput').files = e.dataTransfer.files;
+          loadPDF();
+        }
+      });
+      
+      // 设置主题
+      setupTheme();
+    });
+  </script>
+</body>
+</html>
