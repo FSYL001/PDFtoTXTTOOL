@@ -28,6 +28,8 @@
 ---
 
 ### 🔤 界面预览
+<img width="2559" height="1479" alt="image" src="https://github.com/user-attachments/assets/cb9678af-17ef-4c95-bbd1-97e0253c803e" />
+
 
 ---
 
